@@ -1,0 +1,204 @@
+info:
+  name: "pets-service"
+
+provides:
+  rest:
+    /inventory:
+      GET:
+        200: Inventory
+      POST:
+        requestBody: InventoryItemInput
+        201: InventoryItem
+        400: BadRequest
+
+    /graphql:
+      POST:
+        requestBody: GraphQLQuery
+        200: GraphQLResponse
+
+  graphql:
+    queries:
+      getInventory:
+        type: Inventory
+      getUser:
+        type: User
+        args:
+          id:
+            type: number
+
+    mutations:
+      addInventoryItem:
+        input: InventoryItemInput
+        type: InventoryItem
+      updateUser:
+        input: UpdateUserInput
+        type: User
+
+  events:
+    inventory/itemAdded:
+      producer: InventoryItemEvent
+    inventory/itemUpdated:
+      producer: InventoryItemEvent
+
+consumes:
+  rest:
+    - provider: "Vehicle Service"
+      /vehicles:
+        GET:
+          200: CarOrBike
+
+    - provider: "User Service"
+      /users:
+        GET:
+          200: Users
+
+  graphql:
+    - provider: "GraphQL Service"
+      /graphql:
+        POST:
+          requestBody: GraphQLQuery
+          200: GraphQLResponse
+
+  events:
+    - provider: "Notification Service"
+      user/created:
+        consumer: UserCreatedEvent
+    - provider: "Notification Service"
+      user/updated:
+        consumer: UserUpdatedEvent
+
+schemas:
+  Inventory:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: InventoryItem
+
+  InventoryItem:
+    type: object
+    properties:
+      id:
+        type: number
+      name:
+        type: string
+      type:
+        type: string
+
+  InventoryItemInput:
+    type: object
+    properties:
+      name:
+        type: string
+      type:
+        type: string
+
+  UpdateUserInput:
+    type: object
+    properties:
+      id:
+        type: number
+      fullName:
+        type: string
+      email:
+        type: string
+
+  InventoryItemEvent:
+    type: object
+    properties:
+      id:
+        type: number
+      name:
+        type: string
+      type:
+        type: string
+      eventType:
+        type: string
+
+  BadRequest:
+    type: object
+    properties:
+      message:
+        type: string
+
+  CarOrBike:
+    oneOf:
+      - $ref: Car
+      - $ref: Bike
+
+  Car:
+    type: object
+    properties:
+      make:
+        type: string
+      model:
+        type: string
+      year:
+        type: number
+
+  Bike:
+    type: object
+    properties:
+      brand:
+        type: string
+      type:
+        type: string
+      gearCount:
+        type: number
+
+  Users:
+    type: array
+    items:
+      $ref: User
+
+  User:
+    type: object
+    properties:
+      id:
+        type: number
+      fullName:
+        type: string
+      email:
+        type: string
+
+  GraphQLQuery:
+    type: object
+    properties:
+      query:
+        type: string
+      variables:
+        type: object
+
+  GraphQLResponse:
+    type: object
+    properties:
+      data:
+        type: object
+      errors:
+        type: array
+        items:
+          type: object
+          properties:
+            message:
+              type: string
+
+  UserCreatedEvent:
+    type: object
+    properties:
+      id:
+        type: number
+      fullName:
+        type: string
+      email:
+        type: string
+
+  UserUpdatedEvent:
+    type: object
+    properties:
+      id:
+        type: number
+      fullName:
+        type: string
+      email:
+        type: string
